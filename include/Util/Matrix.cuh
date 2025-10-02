@@ -1,0 +1,85 @@
+#ifndef RENDERERINTERACTIVE_MATRIX_CUH
+#define RENDERERINTERACTIVE_MATRIX_CUH
+
+#include <Basic/Point3.cuh>
+
+namespace renderer {
+    /*
+     * 4x4矩阵类，聚合类型
+     * 使用二维数组存储矩阵，为行主序：一行的内存连续排列
+     * 由于操作均由单个GPU线程完成，逻辑上同CPU线程，则操作均支持设备端
+     *
+     * 转换操作：
+     *   向量和矩阵转换
+     *
+     * 对象操作：
+     *   矩阵相加减
+     *   矩阵数乘除
+     *   矩阵乘法
+     *   求逆矩阵
+     *   求转置矩阵
+     */
+    typedef struct Matrix {
+        double data[5][5];
+        size_t row, col;
+
+        // ====== 矩阵转换 ======
+        //向量转1行4列矩阵：向量不受平移影响，w = 0
+        __host__ __device__ static Matrix toMatrix(const Vec3 & vec) {
+            return {
+                    {
+                            {vec.x},
+                            {vec.y},
+                            {vec.z},
+                            0.0
+                    },
+                    4, 1
+            };
+        }
+        //点转矩阵，点受平移影响，w = 1
+        __host__ __device__ static Matrix toMatrix(const Point3 & p) {
+            return {
+                    {
+                            {p.x},
+                            {p.y},
+                            {p.z},
+                            1.0
+                    },
+                    4, 1
+            };
+        }
+        //1行4列矩阵转向量和点
+        __host__ __device__ Vec3 toVector() const {
+            return {data[0][0], data[1][0], data[2][0]};
+        }
+        __host__ __device__ Point3 toPoint() const {
+            return {data[0][0], data[1][0], data[2][0]};
+        }
+
+        // ====== 对象操作 ======
+        //矩阵加减
+        __host__ __device__ void operator+=(const Matrix & obj);
+        __host__ __device__ Matrix operator+(const Matrix & obj) const;
+        __host__ __device__ void operator-=(const Matrix & obj);
+        __host__ __device__ Matrix operator-(const Matrix & obj) const;
+
+        //矩阵数乘除
+        __host__ __device__ void operator*=(double num);
+        __host__ __device__ Matrix operator*(double num) const;
+        __host__ __device__ friend Matrix operator*(double num, const Matrix & obj);
+        __host__ __device__ void operator/=(double num);
+        __host__ __device__ Matrix operator/(double num) const;
+        __host__ __device__ friend Matrix operator/(double num, const Matrix & obj);
+
+        //矩阵乘法，返回新的矩阵
+        __host__ __device__ Matrix operator*(const Matrix & obj) const;
+
+        //求逆矩阵，返回新的矩阵
+        __host__ __device__ Matrix inverse() const;
+
+        //求转置矩阵，返回新的矩阵
+        __host__ __device__ Matrix transpose() const;
+    } Matrix;
+}
+
+#endif //RENDERERINTERACTIVE_MATRIX_CUH

@@ -1,3 +1,9 @@
+cmake-build-debug/
+cmake-build-debug-visual-studio/
+.idea/
+bin/RendererInteractive*
+.vs/
+.vscode/
 CMakeLists.txt.user
 CMakeCache.txt
 CMakeFiles
