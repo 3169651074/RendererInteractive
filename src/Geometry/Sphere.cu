@@ -49,6 +49,7 @@ namespace renderer {
     }
 
     BoundingBox Sphere::constructBoundingBox() const {
+        //以图元的几何中心为局部空间包围盒的原点
         const Vec3 edge = {radius, radius, radius};
         return {center - edge, center + edge};
     }

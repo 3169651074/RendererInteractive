@@ -87,7 +87,7 @@ namespace renderer {
 
     //矩阵转置
     __host__ __device__ Matrix Matrix::transpose() const {
-        Matrix ret{};
+        Matrix ret{.row = col, .col = row};
         //将第i行变为第i列
         for (size_t i = 1; i <= row; i++) {
             for (size_t j = 1; j <= col; j++) {
@@ -120,7 +120,7 @@ namespace renderer {
         }
 
         //操作矩阵的右半部分即为所求
-        Matrix ret{};
+        Matrix ret{.row = 4, .col = 4};
         for (size_t i = 1; i < 5; i++) {
             for (size_t j = 1; j < 5; j++) {
                 ret.data[i][j] = operateMatrix[i][4 + j];
@@ -177,5 +177,87 @@ namespace renderer {
     }
     __host__ __device__ Matrix operator/(double num, const Matrix & obj) {
         return obj / num;
+    }
+
+    //构造变换矩阵
+    Matrix Matrix::constructShiftMatrix(const std::array<double, 3> & shift) {
+        return {
+                {
+                    0.0, 0.0, 0.0, 0.0, 0.0,
+                    0.0, 1.0, 0.0, 0.0, shift[0],
+                    0.0, 0.0, 1.0, 0.0, shift[1],
+                    0.0, 0.0, 0.0, 1.0, shift[2],
+                    0.0, 0.0, 0.0, 0.0, 1.0
+                }, 4, 4
+        };
+    }
+
+    Matrix Matrix::constructScaleMatrix(const std::array<double, 3> & scale) {
+        return {
+                {
+                        0.0, 0.0, 0.0, 0.0, 0.0,
+                        0.0, scale[0], 0.0, 0.0, 0.0,
+                        0.0, 0.0, scale[1], 0.0, 0.0,
+                        0.0, 0.0, 0.0, scale[2], 0.0,
+                        0.0, 0.0, 0.0, 0.0, 1.0
+                }, 4, 4
+        };
+    }
+
+    Matrix Matrix::constructRotateMatrix(double degree, int axis) {
+        const double theta = MathHelper::degreeToRadian(degree);
+        switch (axis) {
+            case 0:
+                return {
+                        {
+                                0.0, 0.0, 0.0, 0.0, 0.0,
+                                0.0, 1.0, 0.0, 0.0, 0.0,
+                                0.0, 0.0, cos(theta), -sin(theta), 0.0,
+                                0.0, 0.0, sin(theta), cos(theta), 0.0,
+                                0.0, 0.0, 0.0, 0.0, 1.0
+                        }, 4, 4
+                };
+            case 1:
+                return {
+                        {
+                                0.0, 0.0, 0.0, 0.0, 0.0,
+                                0.0, cos(theta), 0.0, sin(theta), 0.0,
+                                0.0, 0.0, 1.0, 0.0, 0.0,
+                                0.0, -sin(theta), 0.0, cos(theta), 0.0,
+                                0.0, 0.0, 0.0, 0.0, 1.0
+                        }, 4, 4
+                };
+            case 2:
+                return {
+                        {
+                                0.0, 0.0, 0.0, 0.0, 0.0,
+                                0.0, cos(theta), -sin(theta), 0.0, 0.0,
+                                0.0, sin(theta), cos(theta), 0.0, 0.0,
+                                0.0, 0.0, 0.0, 1.0, 0.0,
+                                0.0, 0.0, 0.0, 0.0, 1.0
+                        }, 4, 4
+                };
+            default: return {};
+        }
+    }
+
+    Matrix Matrix::constructRotateMatrix(const std::array<double, 3> & rotate) {
+        const auto mx = constructRotateMatrix(rotate[0], 0);
+        const auto my = constructRotateMatrix(rotate[1], 1);
+        const auto mz = constructRotateMatrix(rotate[2], 2);
+        return mx * my * mz;
+    }
+
+    std::string Matrix::toString() const {
+        std::string ret("Matrix: ");
+        ret += "Row = " + std::to_string(row) + ", Col = " + std::to_string(col) + "\n";
+        for(size_t i = 1; i <= row; i++) {
+            ret += "\t";
+            for(size_t j = 1; j <= col; j++) {
+                ret += std::to_string(data[i][j]) + " ";
+            }
+            ret += "\n";
+        }
+        return ret;
     }
 }

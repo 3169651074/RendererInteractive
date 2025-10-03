@@ -46,8 +46,6 @@ namespace renderer {
     }
 
     BoundingBox Parallelogram::constructBoundingBox() const {
-        //将四个顶点都包进包围盒中
-        BoundingBox b1(q, q + u + v), b2(q + u, q + v);
-        return {b1, b2};
+        return {q + 0.5 * (u + v), q - 0.5 * (u + v)};
     }
 }

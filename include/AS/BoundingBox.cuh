@@ -68,6 +68,13 @@ namespace renderer {
 
         //相交测试
         __device__ bool hit(const Ray & ray, const Range & checkRange, double & t) const;
+
+        std::string toString() const {
+            char buf[200];
+            snprintf(buf, 200, "BBox: x=[%.4lf,%.4lf],y=[%.4lf,%.4lf],z=[%.4lf,%.4lf]",
+                     range[0].min,range[0].max,range[1].min,range[1].max,range[2].min,range[2].max);
+            return {buf};
+        }
     };
 }
 

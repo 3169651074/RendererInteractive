@@ -1,14 +1,17 @@
 #include <Global/Render.cuh>
 
 namespace renderer {
-    //常量内存定义
     __constant__ Camera dev_camera[1];
 
-    __device__ Color3 rayColor(SceneGeometryData * dev_geometryData, SceneMaterialData * dev_materialData, const Ray * ray, curandState * state) {
+    __device__ Color3 rayColor(
+            SceneGeometryData * dev_geometryData, SceneMaterialData * dev_materialData,
+            const Ray * ray, curandState * state, const ASTraverseData * dev_asTraverseData)
+    {
         HitRecord record{};
         Ray currentRay = *ray;
         Color3 result{1.0, 1.0, 1.0};
-
+//#define NO_AS
+#ifdef NO_AS
         for (size_t currentIterateDepth = 0; currentIterateDepth < dev_camera[0].rayTraceDepth; currentIterateDepth++) {
             //遍历所有物体，判断是否相交
             bool isHit = false;
@@ -60,10 +63,50 @@ namespace renderer {
                 break;
             }
         }
+#else
+        for (size_t currentIterateDepth = 0; currentIterateDepth < dev_camera[0].rayTraceDepth; currentIterateDepth++) {
+            //通过TLAS进行碰撞测试
+            constexpr Range range = {0.001, INFINITY};
+            
+            if (TLAS::hit(
+                    dev_asTraverseData->tlasArray.first.first, dev_asTraverseData->tlasArray.second.first,
+                    &currentRay, &range, &record, dev_asTraverseData->instances, dev_asTraverseData->blasArray,
+                    dev_geometryData->spheres, dev_geometryData->parallelograms))
+            {
+                //发生碰撞，调用材质的散射函数，获取下一次迭代的光线
+                Ray out;
+                Color3 attenuation;
+
+                //根据材质类型调用对应的散射函数
+                switch (record.materialType) {
+                    case MaterialType::ROUGH:
+                        dev_materialData->roughs[record.materialIndex].scatter(state, currentRay, record, attenuation, out);
+                        break;
+                    case MaterialType::METAL:
+                        if (!dev_materialData->metals[record.materialIndex].scatter(state, currentRay, record, attenuation, out)) {
+                            return result;
+                        }
+                        break;
+                    default:;
+                }
+
+                //更新光线和颜色
+                currentRay = out;
+                result *= attenuation;
+            } else {
+                //没有发生碰撞，将背景光颜色作为光源乘入结果并结束追踪循环
+                result *= dev_camera[0].backgroundColor;
+                break;
+            }
+        }
+#endif
         return result;
     }
 
-    __global__ void render(SceneGeometryData * dev_geometryData, SceneMaterialData * dev_materialData, cudaSurfaceObject_t surfaceObject) {
+    __global__ void render(
+            SceneGeometryData * dev_geometryData, SceneMaterialData * dev_materialData,
+            cudaSurfaceObject_t surfaceObject, const ASTraverseData * dev_asTraverseData)
+    {
         //当前线程对应的全局像素坐标
         const Uint32 x = blockIdx.x * blockDim.x + threadIdx.x;
         const Uint32 y = blockIdx.y * blockDim.y + threadIdx.y;
@@ -96,7 +139,7 @@ namespace renderer {
                 const Ray ray{rayOrigin, rayDirection};
 
                 //发射光线
-                result += rayColor(dev_geometryData, dev_materialData, &ray, &state);
+                result += rayColor(dev_geometryData, dev_materialData, &ray, &state, dev_asTraverseData);
             }
         }
 

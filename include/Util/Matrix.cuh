@@ -28,10 +28,11 @@ namespace renderer {
         __host__ __device__ static Matrix toMatrix(const Vec3 & vec) {
             return {
                     {
-                            {vec.x},
-                            {vec.y},
-                            {vec.z},
-                            0.0
+                            {0.0, 0.0},
+                            {0.0, vec.x},
+                            {0.0, vec.y},
+                            {0.0, vec.z},
+                            {0.0, 0.0}
                     },
                     4, 1
             };
@@ -40,20 +41,21 @@ namespace renderer {
         __host__ __device__ static Matrix toMatrix(const Point3 & p) {
             return {
                     {
-                            {p.x},
-                            {p.y},
-                            {p.z},
-                            1.0
+                            {0.0, 0.0},
+                            {0.0, p.x},
+                            {0.0, p.y},
+                            {0.0, p.z},
+                            {0.0, 1.0}
                     },
                     4, 1
             };
         }
         //1行4列矩阵转向量和点
         __host__ __device__ Vec3 toVector() const {
-            return {data[0][0], data[1][0], data[2][0]};
+            return {data[1][1], data[2][1], data[3][1]};
         }
         __host__ __device__ Point3 toPoint() const {
-            return {data[0][0], data[1][0], data[2][0]};
+            return {data[1][1], data[2][1], data[3][1]};
         }
 
         // ====== 对象操作 ======
@@ -79,6 +81,14 @@ namespace renderer {
 
         //求转置矩阵，返回新的矩阵
         __host__ __device__ Matrix transpose() const;
+
+        //构造变换矩阵
+        static Matrix constructScaleMatrix(const std::array<double, 3> & scale);
+        static Matrix constructShiftMatrix(const std::array<double, 3> & shift);
+        static Matrix constructRotateMatrix(const std::array<double, 3> & rotate);
+        static Matrix constructRotateMatrix(double degree, int axis);
+
+        std::string toString() const;
     } Matrix;
 }
 

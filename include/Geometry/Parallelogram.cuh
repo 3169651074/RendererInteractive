@@ -6,6 +6,7 @@
 namespace renderer {
     /*
      * 平行四边形类，普通类型
+     * 起点为平行四边形在局部空间中的位置
      */
     class Parallelogram {
     public:
@@ -43,6 +44,10 @@ namespace renderer {
 
         Point3 centroid() const {
             return q + 0.5 * u + 0.5 * v;
+        }
+
+        size_t objectPrimitiveCount() const {
+            return 1;
         }
     };
 }

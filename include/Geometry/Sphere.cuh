@@ -6,6 +6,9 @@
 namespace renderer {
     /*
      * 球体类，普通类型（非聚合类型）
+     * 图元构造时传入的位置为图元在局部空间中的位置，只和底层BLAS有关
+     * 当一个物体包含多个图元时，每个图元在局部空间的位置共同决定物体形状
+     *
      * 对象操作：
      *   碰撞检测
      *   获取几何中心
@@ -33,6 +36,11 @@ namespace renderer {
         //获取几何中心
         Point3 centroid() const {
             return center;
+        }
+
+        //获取物体的图元数量，Sphere为单图元物体，只有一个球体图元
+        size_t objectPrimitiveCount() const {
+            return 1;
         }
     };
 }

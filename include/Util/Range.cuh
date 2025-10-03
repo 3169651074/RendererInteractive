@@ -27,7 +27,7 @@ namespace renderer {
 
         // ====== 对象操作 ======
         __host__ __device__ bool empty() const {
-            return min < max;
+            return min >= max;
         }
 
         __host__ __device__ bool inRange(double val, bool leftClose = true, bool rightClose = true) const {

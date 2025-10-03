@@ -53,6 +53,11 @@ add_executable(${EXECUTABLE_NAME} #${C_SRCS} ${CPP_SRCS} ${CU_SRCS}
         src/Geometry/Sphere.cu
         src/Geometry/Parallelogram.cu
         src/Global/Kernel.cu
+        include/AS/Instance.cuh
+        include/AS/BLAS.cuh
+        src/AS/BLAS.cu
+        include/AS/TLAS.cuh
+        src/AS/TLAS.cu
 )
 
 #MSVC编译器必须指定以UTF-8编码读取文件，否则在Windows上需要将所有文件的编码设置为UTF-8 with BOM
